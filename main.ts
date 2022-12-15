@@ -2,6 +2,7 @@ import axios from "axios";
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { createHash } from "crypto";
 import * as dotenv from "dotenv";
+import { resolve } from "path";
 dotenv.config();
 
 interface RawAlert {
@@ -23,6 +24,8 @@ interface Alert {
   title: string;
 }
 
+const hash_path = resolve(__dirname, "hash.txt");
+
 axios.get("https://www.apsva.us/wp-json/wp/v2/mat_alert").then((rawData) => {
   if (rawData.status < 200 || rawData.status >= 300 || rawData.data.length < 1)
     return;
@@ -39,8 +42,8 @@ axios.get("https://www.apsva.us/wp-json/wp/v2/mat_alert").then((rawData) => {
     );
 
   const hash = createHash("sha256").update(JSON.stringify(data)).digest("hex");
-  if (!existsSync("hash.txt") || hash != readFileSync("hash.txt", "utf8")) {
-    writeFileSync("hash.txt", hash, { encoding: "utf8" });
+  if (!existsSync(hash_path) || hash != readFileSync(hash_path, "utf8")) {
+    writeFileSync(hash_path, hash, { encoding: "utf8" });
 
     data.forEach((alert) => {
       axios.post(process.env.WEBHOOK_URL, {
