@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { createHash } from "crypto";
 import * as dotenv from "dotenv";
 import { resolve } from "path";
-dotenv.config();
+dotenv.config({ path: resolve(__dirname, ".env") });
 
 interface RawAlert {
   id: number;
