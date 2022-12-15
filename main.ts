@@ -43,7 +43,9 @@ axios.get("https://www.apsva.us/wp-json/wp/v2/mat_alert").then((rawData) => {
     writeFileSync("hash.txt", hash, { encoding: "utf8" });
 
     data.forEach((alert) => {
-      axios.post(process.env.WEBHOOK_URL, { content: alert.title });
+      axios.post(process.env.WEBHOOK_URL, {
+        content: "@everyone " + alert.title,
+      });
     });
   }
 });
