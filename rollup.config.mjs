@@ -1,12 +1,16 @@
 import { nodeResolve } from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import json from "@rollup/plugin-json";
+import { defineConfig } from "rollup";
 
-export default {
-  input: "main.js",
+export default defineConfig({
+  input: "out/index.js",
   output: {
-    file: "out/bundle.js",
+    dir: "out",
     format: "cjs",
+    manualChunks: {
+      deps: ["axios"],
+    },
   },
   plugins: [nodeResolve(), commonjs(), json()],
-};
+});

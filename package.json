@@ -4,15 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "compile": "swc main.js -o out/main.js; rollup -c",
-    "run": "pnpm run compile; node out/bundle.js"
+    "compile": "rm -rf out; swc main.ts -o out/index.js; rollup -c",
+    "deploy": "./deploy.sh"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.231.0",
     "axios": "^1.2.1",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "form-data": "^4.0.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^23.0.5",

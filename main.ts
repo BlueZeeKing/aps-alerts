@@ -1,9 +1,11 @@
 import axios from "axios";
 import { readFileSync, writeFileSync, existsSync } from "fs";
-import { createHash } from "crypto";
-import * as dotenv from "dotenv";
 import { resolve } from "path";
-dotenv.config({ path: resolve(__dirname, ".env") });
+import { S3Client } from "@aws-sdk/client-s3";
+
+const client = new S3Client({ region: "us-east-1" });
+
+const EFS_PATH = "/tmp";
 
 interface RawAlert {
   id: number;
@@ -24,9 +26,10 @@ interface Alert {
   title: string;
 }
 
-const hash_path = resolve(__dirname, "hash.txt");
+const file_path = resolve(EFS_PATH, "prev.json");
 
-axios.get("https://www.apsva.us/wp-json/wp/v2/mat_alert").then((rawData) => {
+export async function handler() {
+  const rawData = await axios.get(process.env.URL as string);
   if (rawData.status < 200 || rawData.status >= 300 || rawData.data.length < 1)
     return;
 
@@ -41,14 +44,20 @@ axios.get("https://www.apsva.us/wp-json/wp/v2/mat_alert").then((rawData) => {
       })
     );
 
-  const hash = createHash("sha256").update(JSON.stringify(data)).digest("hex");
-  if (!existsSync(hash_path) || hash != readFileSync(hash_path, "utf8")) {
-    writeFileSync(hash_path, hash, { encoding: "utf8" });
+  if (
+    !existsSync(file_path) ||
+    data != JSON.parse(readFileSync(file_path, "utf8"))
+  ) {
+    writeFileSync(file_path, JSON.stringify(data), { encoding: "utf8" });
 
-    data.forEach((alert) => {
-      axios.post(process.env.WEBHOOK_URL, {
-        content: "@everyone " + alert.title,
-      });
-    });
+    await Promise.all(
+      data.map((alert) =>
+        axios.post(process.env.WEBHOOK as string, {
+          content: "" + alert.title,
+        })
+      )
+    );
   }
-});
+
+  return { statusCode: 200 };
+}
