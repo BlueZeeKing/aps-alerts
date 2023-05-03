@@ -4,12 +4,11 @@ use dotenv::dotenv;
 
 use crate::errors::Error;
 
+#[derive(Debug)]
 pub struct Config {
-    pub prod_webhook: String,
-    pub dev_webhook: String,
+    pub webhook: String,
     pub error_webhook: String,
-    pub prod_alert_url: String,
-    pub dev_alert_url: String,
+    pub alert_url: String,
 }
 
 impl Config {
@@ -17,11 +16,9 @@ impl Config {
         dotenv()?;
 
         return Ok(Config {
-            prod_webhook: env::var("PROD_WEBHOOK")?,
-            dev_webhook: env::var("DEV_WEBHOOK")?,
+            webhook: env::var("WEBHOOK")?,
             error_webhook: env::var("ERROR_WEBHOOK")?,
-            prod_alert_url: env::var("PROD_ALERT_URL")?,
-            dev_alert_url: env::var("DEV_ALERT_URL")?,
+            alert_url: env::var("ALERT_URL")?,
         });
     }
 }

@@ -1,75 +1,41 @@
 use config::Config;
-use reqwest::{ self };
-use std::{ fs::File, io::Read, path::Path };
+use reqwest;
+use std::{collections::HashSet, thread, time::Duration};
 
-mod structs;
 mod config;
 mod errors;
+mod structs;
 
-use structs::{ Response, DiscordPost };
-use errors::{ Error, RequestError };
+use errors::{Error, RequestError};
+use structs::{DiscordPost, Response};
 
 fn main() {
-    let result = run();
+    let config = Config::load().expect("Could not load config");
+    let mut history = HashSet::new();
 
-    if let Err(err) = result {
-        println!("{}", err);
-        handle_error(err).unwrap();
+    loop {
+        let result = run(&mut history, &config);
+
+        if let Err(err) = result {
+            println!("{}", err);
+            handle_error(err).unwrap();
+        }
+
+        thread::sleep(Duration::from_secs(60 * 3))
     }
 }
 
-fn run() -> Result<(), Error> {
-    let config = Config::load()?;
+fn run(history: &mut HashSet<Response>, config: &Config) -> Result<(), Error> {
+    let data = reqwest::blocking::get(&config.alert_url)?.json::<Vec<Response>>()?;
 
-    let data = reqwest::blocking
-        ::get(
-            if cfg!(debug_assertions) {
-                config.dev_alert_url // TODO: Add mock api
-            } else {
-                config.prod_alert_url
-            }
-        )?
-        .json::<Vec<Response>>()?;
+    for msg in data.iter().filter(|item| !history.contains(item)) {
+        send_discord_message(&config.webhook, format!("@everyone {}", msg.title.rendered))?;
+    }
 
-    if data.len() > 0 {
-        let path = "./history.txt";
-        let history: Vec<Response> = if Path::new(path).is_file() {
-            let mut file = File::open(path)?;
-            let mut data = String::new();
+    history.clear();
 
-            file.read_to_string(&mut data)?;
-
-            serde_json::from_str(&data)?
-        } else {
-            File::create(path)?;
-
-            Vec::new()
-        };
-
-        let mut save: Vec<Response> = Vec::with_capacity(history.len() + data.len());
-
-        for msg in data {
-            if history.contains(&msg) {
-                if !save.contains(&msg) {
-                    save.push(msg.clone());
-                }
-                continue;
-            }
-
-            send_discord_message(
-                if cfg!(debug_assertions) {
-                    &config.dev_webhook // debug
-                } else {
-                    &config.prod_webhook // release
-                },
-                format!("@everyone {}", msg.title.rendered)
-            )?;
-
-            save.push(msg);
-        }
-
-        let mut file = File::create(path)?;
-        serde_json::to_writer(&mut file, &save)?;
+    for msg in data {
+        history.insert(msg);
     }
 
     Ok(())
@@ -81,13 +47,11 @@ fn send_discord_message(url: &str, content: String) -> Result<(), Error> {
     let res = client.post(url).json(&(DiscordPost { content })).send()?;
 
     if !res.status().is_success() {
-        return Err(
-            Error::RequestError(RequestError {
-                code: res.status(),
-                url: res.url().to_string(),
-                msg: res.text()?.to_string(),
-            })
-        );
+        return Err(Error::RequestError(RequestError {
+            code: res.status(),
+            url: res.url().to_string(),
+            msg: res.text()?.to_string(),
+        }));
     }
 
     Ok(())
