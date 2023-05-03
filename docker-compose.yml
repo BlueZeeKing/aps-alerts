@@ -1,3 +1,6 @@
 services:
   app:
     build: .
+    memory: 10m
+    env_file:
+      - .env

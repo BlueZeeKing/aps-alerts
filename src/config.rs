@@ -1,7 +1,5 @@
 use std::env;
 
-use dotenv::dotenv;
-
 use crate::errors::Error;
 
 #[derive(Debug)]
@@ -13,8 +11,6 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Result<Self, Error> {
-        dotenv()?;
-
         return Ok(Config {
             webhook: env::var("WEBHOOK")?,
             error_webhook: env::var("ERROR_WEBHOOK")?,

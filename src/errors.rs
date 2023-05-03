@@ -1,4 +1,4 @@
-use std::{ io, env, error, fmt::Display };
+use std::{env, error, fmt::Display, io};
 
 #[derive(Debug)]
 pub enum Error {
@@ -6,7 +6,6 @@ pub enum Error {
     RequestError(RequestError),
     FileError(io::Error),
     JsonError(serde_json::Error),
-    ConfigLoadError(dotenv::Error),
     ConfigVarError(env::VarError),
 }
 
@@ -17,7 +16,6 @@ impl Display for Error {
             Error::RequestError(err) => write!(f, "Request error: {}", err),
             Error::FileError(err) => write!(f, "File error: {}", err),
             Error::JsonError(err) => write!(f, "Json parse error: {}", err),
-            Error::ConfigLoadError(err) => write!(f, "Config error: {}", err),
             Error::ConfigVarError(err) => write!(f, "Config error: {}", err),
         }
     }
@@ -41,12 +39,6 @@ impl From<serde_json::Error> for Error {
     }
 }
 
-impl From<dotenv::Error> for Error {
-    fn from(value: dotenv::Error) -> Self {
-        Error::ConfigLoadError(value)
-    }
-}
-
 impl From<env::VarError> for Error {
     fn from(value: env::VarError) -> Self {
         Error::ConfigVarError(value)
@@ -62,7 +54,11 @@ pub struct RequestError {
 
 impl Display for RequestError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Request to {:?} failed with code {}: {}", self.url, self.code, self.msg)
+        write!(
+            f,
+            "Request to {:?} failed with code {}: {}",
+            self.url, self.code, self.msg
+        )
     }
 }
 
