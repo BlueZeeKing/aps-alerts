@@ -35,11 +35,7 @@ fn main() {
 fn run(history: &mut HashSet<Response>, config: &Config) -> Result<(), Error> {
     let data = reqwest::blocking::get(&config.alert_url)?.json::<Vec<Response>>()?;
 
-    for msg in data
-        .iter()
-        .filter(|item| item.post_meta.site_id_list.contains(&"1".to_owned()))
-        .filter(|item| !history.contains(item))
-    {
+    for msg in data.iter().filter(|item| !history.contains(item)) {
         send_discord_message(&config.webhook, format!("@everyone {}", msg.title.rendered))?;
     }
 

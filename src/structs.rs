@@ -4,14 +4,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
 pub struct Response {
-    pub post_meta: PostMeta,
+    // post_meta: PostMeta,
     pub title: Title,
 }
 
-#[derive(Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
-pub struct PostMeta {
+#[derive(Serialize, Deserialize, Clone)]
+struct PostMeta {
     alert_style: String, // alert (there are more)
-    pub site_id_list: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Hash, PartialEq, Eq)]
