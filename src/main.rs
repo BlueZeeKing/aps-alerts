@@ -12,13 +12,20 @@ use structs::{DiscordPost, Response};
 fn main() {
     let config = Config::load().expect("Could not load config");
     let mut history = HashSet::new();
+    let mut num_errors = 0;
 
     loop {
         let result = run(&mut history, &config);
 
         if let Err(err) = result {
             println!("{}", err);
-            handle_error(err).unwrap();
+            if num_errors >= 2 {
+                handle_error(err).unwrap();
+            } else {
+                num_errors += 1
+            }
+        } else {
+            num_errors = 0;
         }
 
         thread::sleep(Duration::from_secs(60 * 3))
