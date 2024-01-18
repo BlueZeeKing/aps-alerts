@@ -1,4 +1,5 @@
 use config::Config;
+use dotenvy::dotenv;
 use reqwest;
 use std::{collections::HashSet, thread, time::Duration};
 
@@ -10,6 +11,7 @@ use errors::{Error, RequestError};
 use structs::{DiscordPost, Response};
 
 fn main() {
+    dotenv().unwrap();
     let config = Config::load().expect("Could not load config");
     let mut history = HashSet::new();
     let mut num_errors = 0;
@@ -37,6 +39,16 @@ fn run(history: &mut HashSet<Response>, config: &Config) -> Result<(), Error> {
 
     for msg in data.iter().filter(|item| !history.contains(item)) {
         send_discord_message(&config.webhook, format!("@everyone {}", msg.title.rendered))?;
+        send_discord_message(&config.error_webhook, format!("{:#?}", msg))?;
+    }
+
+    let removed = history
+        .iter()
+        .filter(|item| !data.contains(item))
+        .collect::<Vec<_>>();
+
+    if !removed.is_empty() {
+        send_discord_message(&config.error_webhook, format!("Removed: {:#?}", removed))?;
     }
 
     history.clear();
