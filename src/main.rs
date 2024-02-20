@@ -38,7 +38,14 @@ fn run(history: &mut HashSet<Response>, config: &Config) -> Result<(), Error> {
     let data = reqwest::blocking::get(&config.alert_url)?.json::<Vec<Response>>()?;
 
     for msg in data.iter().filter(|item| !history.contains(item)) {
-        send_discord_message(&config.webhook, format!("@everyone {}", msg.title.rendered))?;
+        if msg.post_meta.site_id_list.contains(&"41".to_string()) {
+            send_discord_message(&config.webhook, format!("@everyone {}", msg.title.rendered))?;
+        } else {
+            send_discord_message(
+                &config.webhook,
+                format!("Not for YHS:\n{}", msg.title.rendered),
+            )?;
+        }
         send_discord_message(&config.error_webhook, format!("{:#?}", msg))?;
     }
 
