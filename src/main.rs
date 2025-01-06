@@ -1,14 +1,12 @@
+use anyhow::{bail, Error};
 use config::Config;
 use dotenvy::dotenv;
-use html_escape::{decode_html_entities, decode_html_entities_to_string};
-use reqwest;
+use html_escape::decode_html_entities;
 use std::{collections::HashSet, thread, time::Duration};
 
 mod config;
-mod errors;
 mod structs;
 
-use errors::{Error, RequestError};
 use structs::{DiscordPost, Response};
 
 fn main() {
@@ -80,11 +78,11 @@ fn send_discord_message(url: &str, content: String) -> Result<(), Error> {
     let res = client.post(url).json(&(DiscordPost { content })).send()?;
 
     if !res.status().is_success() {
-        return Err(Error::RequestError(RequestError {
-            code: res.status(),
-            url: res.url().to_string(),
-            msg: res.text()?.to_string(),
-        }));
+        bail!(
+            "Discord send request returned: {}, {}",
+            res.status(),
+            res.text()?
+        )
     }
 
     Ok(())
