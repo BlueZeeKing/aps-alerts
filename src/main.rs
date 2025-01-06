@@ -1,5 +1,6 @@
 use config::Config;
 use dotenvy::dotenv;
+use html_escape::{decode_html_entities, decode_html_entities_to_string};
 use reqwest;
 use std::{collections::HashSet, thread, time::Duration};
 
@@ -39,11 +40,17 @@ fn run(history: &mut HashSet<Response>, config: &Config) -> Result<(), Error> {
 
     for msg in data.iter().filter(|item| !history.contains(item)) {
         if msg.post_meta.site_id_list.contains(&"41".to_string()) {
-            send_discord_message(&config.webhook, format!("@everyone {}", msg.title.rendered))?;
+            send_discord_message(
+                &config.webhook,
+                format!("@everyone {}", decode_html_entities(&msg.title.rendered)),
+            )?;
         } else {
             send_discord_message(
                 &config.webhook,
-                format!("Not for YHS:\n{}", msg.title.rendered),
+                format!(
+                    "Not for YHS:\n{}",
+                    decode_html_entities(&msg.title.rendered)
+                ),
             )?;
         }
         send_discord_message(&config.error_webhook, format!("{:#?}", msg))?;
